@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "0cLXxBVQBDimU6CxTGYfKA+PKfwQeYqdv06yZwJTPUg=",
+  "Source": "FlightPlaner",
+  "BasePath": "_content/FlightPlaner",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
