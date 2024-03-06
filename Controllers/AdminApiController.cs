@@ -2,7 +2,7 @@
 using FlightPlaner.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightPlaner.Controllers
 {
@@ -11,6 +11,12 @@ namespace FlightPlaner.Controllers
     [ApiController]
     public class AdminApiController : ControllerBase
     {
+        private readonly FlightPlannerDBContext _context;
+
+        public AdminApiController(FlightPlannerDBContext context)
+        {
+            _context = context;
+        }
         private static readonly object lockObject = new object();
 
         [HttpDelete]
@@ -19,13 +25,15 @@ namespace FlightPlaner.Controllers
         {
             lock (lockObject)
             {
-                var flight = FlightStorage.GetFlightById(id);
+                var flight = _context.Flights.Include(flight => flight.To)
+                                             .Include(flight => flight.From).SingleOrDefault(flight => flight.Id == id);
                 if (flight == null)
                 {
                     return Ok();
                 }
 
-                FlightStorage.DeleteFlight(flight);
+                _context.Flights.Remove(flight);
+                _context.SaveChanges();
 
                 return Ok();
             }
@@ -37,11 +45,12 @@ namespace FlightPlaner.Controllers
         {
             lock (lockObject)
             {
-                var flight = FlightStorage.GetFlightById(id);
+                var flight = _context.Flights.FirstOrDefault(x => x.Id == id);
                 if (flight == null)
                 {
                     return NotFound();
                 }
+                _context.SaveChanges();
 
                 return Ok(flight);
             }
@@ -58,13 +67,14 @@ namespace FlightPlaner.Controllers
                 {
                     return BadRequest();
                 }
-
-                if (FlightStorage.DoesFlightExsist(flight))
+                
+                if (_context.Flights.Any(x=> x.ArrivalTime == flight.ArrivalTime && x.DepartureTime == flight.DepartureTime && x.From.AirportCode == flight.From.AirportCode && x.To.AirportCode == flight.To.AirportCode && x.Carrier == flight.Carrier))
                 {
                     return Conflict();
                 }
 
-                FlightStorage.AddFlight(flight);
+                _context.Flights.Add(flight);
+                _context.SaveChanges();
 
                 return Created("", flight);
             }

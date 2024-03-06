@@ -1,6 +1,8 @@
 
 using FlightPlaner.KautkKas;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace FlightPlaner
 {
@@ -22,7 +24,11 @@ namespace FlightPlaner
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
+            
+            builder.Services.AddDbContextPool<FlightPlannerDBContext>( options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("flight-planner"));
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FlightPlaner")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+386ed670d1f138e691155dbc837f72e2d23eeba1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3ee241ba3de57c68f15c379dbf6f45870db646fe")]
 [assembly: System.Reflection.AssemblyProductAttribute("FlightPlaner")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FlightPlaner")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

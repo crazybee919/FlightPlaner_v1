@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+using FlightPlaner;
 using FlightPlaner.Models;
-using FlightPlaner.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightPlanner.Controllers
 {
@@ -9,6 +9,13 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CustomerApiController : ControllerBase
     {
+        private readonly FlightPlannerDBContext _context;
+        public CustomerApiController(FlightPlannerDBContext context)
+        {
+            _context = context;
+        }
+        private static readonly object lockObject = new object();
+        
         [HttpGet]
         [Route("airports")]
         public IActionResult SearchAirports(string search)
@@ -19,7 +26,7 @@ namespace FlightPlanner.Controllers
 
             if (validValues.Contains(searchTerm))
             {
-                return Ok(new[] { new { airport = "RIX", city = "Riga", country = "Latvia" } });
+                 return Ok(_context.Flights.FirstOrDefault(x => x.To.AirportCode == "RIX"));
             }
 
             return BadRequest();
@@ -34,15 +41,14 @@ namespace FlightPlanner.Controllers
             {
                 return BadRequest();
             }
-
-            var flights = FlightStorage.GetFlightByDest(request.From, request.To, request.DepartureDate);
-
+            
             var expectedResult = new PageResult
             {
                 Page = 0,
-                TotalItems = flights.Count(),
-                Items = flights.ToList()
+                TotalItems =_context.Flights.Count(), 
+                Items =_context.Flights.ToList()
             };
+            _context.SaveChanges();
 
             return Ok(expectedResult);
         }
@@ -50,14 +56,19 @@ namespace FlightPlanner.Controllers
         [HttpGet]
         [Route("flights/{id}")]
         public IActionResult FindFlightById(int id)
-        {
-            var flight = FlightStorage.GetFlightById(id);
-            if (flight == null)
+        { 
+            lock (lockObject)
             {
-                return NotFound();
-            }
+                var flight = _context.Flights.Include(flight => flight.To)
+                    .Include(flight => flight.From).SingleOrDefault(flight => flight.Id == id);
+                if (flight == null)
+                {
+                    return NotFound();
+                }
+                _context.SaveChanges();
 
-            return Ok(flight);
+                return Ok(flight);
+            }
         }
     }
 }

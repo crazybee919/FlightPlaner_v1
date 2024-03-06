@@ -1,7 +1,4 @@
 ﻿using FlightPlaner.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Threading.Tasks;
-
 
 namespace FlightPlaner.Storage
 {
@@ -9,28 +6,7 @@ namespace FlightPlaner.Storage
     {
         private static List<Flight> _flights = new List<Flight>();
         private static int _id;
-
-        public static void AddFlight(Flight flight)
-        {
-            flight.Id = _id++;
-            _flights.Add(flight);
-        }
-
-        public static void DeleteFlight(Flight flight)
-        {
-            _flights.Remove(flight);
-        }
-
-        public static void Clear()
-        {
-            _flights.Clear();
-        }
-
-        public static Flight GetFlightById(int id)
-        {
-            return _flights.FirstOrDefault(flight => flight.Id == id);
-        }
-
+        
         public static List<Flight> GetFlightByDest(string airportFrom, string airportTo, string date)
         {
             var ParsedDate = DateTime.Parse(date).Date;
@@ -66,23 +42,6 @@ namespace FlightPlaner.Storage
         public static bool AreAirportsSame(Flight flight)
         {
             return flight.To.AirportCode.ToLower().Trim() == flight.From.AirportCode.ToLower().Trim();
-        }
-
-        public static bool DoesFlightExsist(Flight flight)
-        {
-            if (_flights.Any(x =>
-                    x.Carrier == flight.Carrier &&
-                    DateTime.Parse(x.ArrivalTime) == DateTime.Parse(flight.ArrivalTime) &&
-                    DateTime.Parse(x.DepartureTime) == DateTime.Parse(flight.DepartureTime) &&
-                    x.From.AirportCode == flight.From.AirportCode &&
-                    x.To.AirportCode == flight.To.AirportCode &&
-                    x.From.City == flight.From.City &&
-                    x.From.Country == flight.From.Country))
-            {
-                return true;
-            }
-
-            return false;
         }
     }
 }
