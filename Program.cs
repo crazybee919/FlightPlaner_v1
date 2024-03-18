@@ -1,10 +1,13 @@
-
-using FlightPlaner.KautkKas;
+using System.Reflection;
+using FlightPlanner.Core.Models;
+using FlightPlanner.KautkKas;
+using FlightPlanner.Services;
+using FlightPlannerCore.Services;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
-namespace FlightPlaner
+namespace FlightPlanner
 {
     public class Program
     {
@@ -29,6 +32,15 @@ namespace FlightPlaner
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("flight-planner"));
             });
+            builder.Services.AddTransient<IFlightPlannerDbContext, FlightPlannerDBContext>();
+            builder.Services.AddTransient<IDbService, DbService>();
+            builder.Services.AddTransient<IEntityService<Airport>, EntityService<Airport>>();
+            builder.Services.AddTransient<IEntityService<Flight>, EntityService<Flight>>();
+            builder.Services.AddTransient<IFlightService, FlightService>();
+            var assembly = Assembly.GetExecutingAssembly();
+            builder.Services.AddAutoMapper(assembly);
+            builder.Services.AddValidatorsFromAssembly(assembly);
+            
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

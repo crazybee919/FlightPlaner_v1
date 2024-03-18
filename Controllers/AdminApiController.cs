@@ -1,22 +1,30 @@
-﻿using FlightPlaner.Models;
-using FlightPlaner.Storage;
+﻿using AutoMapper;
+using FlightPlanner.Core.Models;
+using FlightPlanner.Models;
+using FlightPlannerCore.Services;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
-namespace FlightPlaner.Controllers
+
+namespace FlightPlanner.Controllers
 {
     [Authorize]
     [Route("admin-api")]
     [ApiController]
     public class AdminApiController : ControllerBase
     {
-        private readonly FlightPlannerDBContext _context;
+        private readonly IFlightService _flightsService;
+        private readonly IMapper _mapper;
+        private readonly IValidator<AddFlightRequest> _validator;
 
-        public AdminApiController(FlightPlannerDBContext context)
+        public AdminApiController(IFlightService flightsService, IMapper mapper, IValidator<AddFlightRequest> validator)
         {
-            _context = context;
+            _flightsService = flightsService;
+            _mapper = mapper;
+            _validator = validator;
         }
+
         private static readonly object lockObject = new object();
 
         [HttpDelete]
@@ -25,15 +33,13 @@ namespace FlightPlaner.Controllers
         {
             lock (lockObject)
             {
-                var flight = _context.Flights.Include(flight => flight.To)
-                                             .Include(flight => flight.From).SingleOrDefault(flight => flight.Id == id);
+                var flight = _flightsService.GetFullFlightById(id);
                 if (flight == null)
                 {
                     return Ok();
                 }
 
-                _context.Flights.Remove(flight);
-                _context.SaveChanges();
+                _flightsService.Delete(flight);
 
                 return Ok();
             }
@@ -45,38 +51,59 @@ namespace FlightPlaner.Controllers
         {
             lock (lockObject)
             {
-                var flight = _context.Flights.FirstOrDefault(x => x.Id == id);
+                var flight = _flightsService.GetFullFlightById(id);
                 if (flight == null)
                 {
                     return NotFound();
                 }
-                _context.SaveChanges();
 
-                return Ok(flight);
+                return Ok(_mapper.Map<AddFlightResponse>(flight));
             }
         }
 
         [HttpPut]
         [Route("flights")]
-        public IActionResult AddFlight(Flight flight)
+        public IActionResult AddFlight(AddFlightRequest request)
         {
             lock (lockObject)
             {
-                if (!FlightStorage.IsFlightTimeCorrect(flight) || FlightStorage.AreAirportsSame(flight) ||
-                    FlightStorage.IsFlightValuesEmpty(flight))
+                if (request.From.Airport.Trim().ToLower() == request.To.Airport.Trim().ToLower())
                 {
                     return BadRequest();
                 }
+                //if time not wierd
+                DateTime departureTime, arrivalTime;
+                if (DateTime.TryParse(request.DepartureTime, out departureTime) &&
+                    DateTime.TryParse(request.ArrivalTime, out arrivalTime))
+                {
+                    if (departureTime >= arrivalTime)
+                    {
+                        return BadRequest();
+                    }
+                }
                 
-                if (_context.Flights.Any(x=> x.ArrivalTime == flight.ArrivalTime && x.DepartureTime == flight.DepartureTime && x.From.AirportCode == flight.From.AirportCode && x.To.AirportCode == flight.To.AirportCode && x.Carrier == flight.Carrier))
+                var allFlights = _flightsService.GetAll();
+
+                if (allFlights.Any(exsistingFlight => exsistingFlight.To.AirportCode == request.To.Airport 
+                                                      && exsistingFlight.From.AirportCode == request.From.Airport 
+                                                      && exsistingFlight.Carrier == request.Carrier
+                                                      && exsistingFlight.ArrivalTime == request.ArrivalTime
+                                                      && exsistingFlight.DepartureTime == request.DepartureTime))
                 {
                     return Conflict();
                 }
 
-                _context.Flights.Add(flight);
-                _context.SaveChanges();
+                var validationResult = _validator.Validate(request);
+                if (!validationResult.IsValid)
+                {
+                    return BadRequest(validationResult.Errors);
+                }
 
-                return Created("", flight);
+
+                var flight = _mapper.Map<Flight>(request);
+                _flightsService.Create(flight);
+
+                return Created("", _mapper.Map<AddFlightResponse>(flight));
             }
         }
     }
