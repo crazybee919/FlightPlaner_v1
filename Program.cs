@@ -2,6 +2,7 @@ using System.Reflection;
 using FlightPlanner.Core.Models;
 using FlightPlanner.KautkKas;
 using FlightPlanner.Services;
+using FlightPlanner.UseCases;
 using FlightPlannerCore.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
@@ -40,6 +41,7 @@ namespace FlightPlanner
             var assembly = Assembly.GetExecutingAssembly();
             builder.Services.AddAutoMapper(assembly);
             builder.Services.AddValidatorsFromAssembly(assembly);
+            builder.Services.AddServices();
             
             var app = builder.Build();
 

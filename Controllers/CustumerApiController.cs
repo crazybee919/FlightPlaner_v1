@@ -1,7 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using FlightPlanner.Core.Models;
-using FlightPlanner.Models;
+using FlightPlanner.UseCases.Models;
 using FlightPlannerCore.Services;
 using FluentValidation;
 
